@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "cl.duoc.agronutri.app-mergeDebugResources-54:/values-v30/values-v30.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\VI-Alumno\\.gradle\\caches\\8.9\\transforms\\9279b4a7ac1a0427f200da75ae32e52a\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "72",
+                        "endOffsets": "123"
+                    }
+                }
+            ]
+        }
+    ]
+}
