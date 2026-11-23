@@ -14,9 +14,12 @@ class PrediosViewModel(private val repo: AgroRepository) : ViewModel() {
     val predios: StateFlow<List<PredioResumen>> = repo.predios()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun crearPredio(nombre: String, superficieHa: Double) {
+    /** latitud/longitud son opcionales: sin ellas el clima usa la ubicación de referencia. */
+    fun crearPredio(nombre: String, superficieHa: Double, latitud: Double? = null, longitud: Double? = null) {
         viewModelScope.launch {
-            repo.crearPredio(Predio(nombre = nombre, superficieHa = superficieHa))
+            repo.crearPredio(
+                Predio(nombre = nombre, superficieHa = superficieHa, latitud = latitud, longitud = longitud)
+            )
         }
     }
 }

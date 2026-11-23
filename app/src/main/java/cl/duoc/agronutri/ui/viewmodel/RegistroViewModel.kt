@@ -50,7 +50,7 @@ class RegistroViewModel(
     fun onEtapa(etapa: String) = _ui.update { it.copy(etapa = etapa) }
 
     fun onValor(campo: Campo, texto: String) = _ui.update {
-        it.copy(valores = it.valores + (campo to texto), errores = it.errores - campo)
+        it.copy(valores = it.valores + (campo to Validacion.soloNumero(texto)), errores = it.errores - campo)
     }
 
     /** Guarda la foto de la cámara en el almacenamiento interno de la app. */

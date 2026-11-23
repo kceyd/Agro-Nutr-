@@ -10,9 +10,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HistorialViewModel(repo: AgroRepository) : ViewModel() {
+class HistorialViewModel(private val repo: AgroRepository) : ViewModel() {
     val mediciones: StateFlow<List<MedicionConPredio>> = repo.historial()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Acción del asesor: valida una medición directo desde la lista. */
+    fun validar(id: Int) {
+        viewModelScope.launch { repo.validar(id) }
+    }
 }
 
 class RecomendacionViewModel(

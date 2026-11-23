@@ -1,13 +1,29 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
 
 android {
     namespace = "cl.duoc.agronutri"
     compileSdk = 35
+
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+            storePassword = keystoreProps.getProperty("storePassword")
+            keyAlias = keystoreProps.getProperty("keyAlias")
+            keyPassword = keystoreProps.getProperty("keyPassword")
+        }
+    }
+
 
     defaultConfig {
         applicationId = "cl.duoc.agronutri"
@@ -19,10 +35,12 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+
             )
         }
     }
@@ -59,6 +77,8 @@ dependencies {
     // Retrofit (sincronización con backend Spring Boot)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    // Gson explícito: ClimaApi.kt usa @SerializedName para leer la API externa Open-Meteo.
+    implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

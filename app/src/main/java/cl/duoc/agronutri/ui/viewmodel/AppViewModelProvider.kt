@@ -28,5 +28,8 @@ object AppViewModelProvider {
         initializer {
             RecomendacionViewModel(createSavedStateHandle(), app().container.repository)
         }
+        initializer {
+            ClimaViewModel(app().container.climaRepository, app().container.networkMonitor)
+        }
     }
 }

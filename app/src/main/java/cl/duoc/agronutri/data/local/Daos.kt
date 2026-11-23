@@ -19,6 +19,15 @@ interface PredioDao {
 
     @Insert
     suspend fun insertar(predio: Predio): Long
+
+    @Query("SELECT COUNT(*) FROM predios WHERE pendienteSync = 1")
+    fun observarPendientes(): Flow<Int>
+
+    @Query("SELECT * FROM predios WHERE pendienteSync = 1")
+    suspend fun pendientes(): List<Predio>
+
+    @Query("UPDATE predios SET pendienteSync = 0 WHERE id IN (:ids)")
+    suspend fun marcarSincronizados(ids: List<Int>)
 }
 
 @Dao

@@ -10,9 +10,10 @@ import cl.duoc.agronutri.data.remote.RetrofitProvider
 import cl.duoc.agronutri.data.remote.aDto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /**
- * Única fuente de verdad: Room (offline). La sincronización con el backend
+ * Única fuente de verdad: Room (offline). La sincronización con los microservicios
  * se hace aparte, cuando hay red.
  */
 class AgroRepository(
@@ -20,7 +21,8 @@ class AgroRepository(
     private val medicionDao: MedicionDao
 ) {
     companion object {
-        // Déjalo en false mientras no tengas el backend Spring Boot corriendo.
+        // false = la sincronización se simula (la app funciona sin backend).
+        // true  = envía a predios-service (8081) y mediciones-service (8083). Ver backend/README.md
         const val USAR_BACKEND_REAL = false
     }
 
@@ -31,22 +33,33 @@ class AgroRepository(
     suspend fun guardarMedicion(medicion: Medicion): Long = medicionDao.insertar(medicion)
     fun historial(): Flow<List<MedicionConPredio>> = medicionDao.observarHistorial()
     fun detalle(id: Int): Flow<MedicionConPredio?> = medicionDao.observarDetalle(id)
-    fun pendientes(): Flow<Int> = medicionDao.observarPendientes()
     suspend fun validar(id: Int) = medicionDao.validar(id)
 
-    /** Envía los registros pendientes. Devuelve cuántos se sincronizaron. */
+    /** Registros sin enviar: predios nuevos + mediciones nuevas o validadas. */
+    fun pendientes(): Flow<Int> =
+        combine(predioDao.observarPendientes(), medicionDao.observarPendientes()) { a, b -> a + b }
+
+    /** Envía lo pendiente (primero predios, luego mediciones). Devuelve cuántos registros se sincronizaron. */
     suspend fun sincronizarPendientes(): Int {
-        val lista = medicionDao.pendientes()
-        if (lista.isEmpty()) return 0
+        val predios = predioDao.pendientes()
+        val mediciones = medicionDao.pendientes()
+        if (predios.isEmpty() && mediciones.isEmpty()) return 0
 
         if (USAR_BACKEND_REAL) {
-            val respuesta = RetrofitProvider.api.enviarMediciones(lista.map { it.aDto() })
-            if (!respuesta.isSuccessful) error("Error del servidor: ${respuesta.code()}")
+            if (predios.isNotEmpty()) {
+                val r = RetrofitProvider.predios.sincronizar(predios.map { it.aDto() })
+                if (!r.isSuccessful) error("predios-service respondió ${r.code()}")
+            }
+            if (mediciones.isNotEmpty()) {
+                val r = RetrofitProvider.mediciones.sincronizar(mediciones.map { it.aDto() })
+                if (!r.isSuccessful) error("mediciones-service respondió ${r.code()}")
+            }
         } else {
             delay(1000) // simula la llamada al servidor
         }
 
-        medicionDao.marcarSincronizadas(lista.map { it.id })
-        return lista.size
+        if (predios.isNotEmpty()) predioDao.marcarSincronizados(predios.map { it.id })
+        if (mediciones.isNotEmpty()) medicionDao.marcarSincronizadas(mediciones.map { it.id })
+        return predios.size + mediciones.size
     }
 }

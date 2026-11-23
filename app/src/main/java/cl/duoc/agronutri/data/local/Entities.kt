@@ -1,5 +1,6 @@
 package cl.duoc.agronutri.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -11,7 +12,12 @@ import androidx.room.Relation
 data class Predio(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nombre: String,
-    val superficieHa: Double
+    val superficieHa: Double,
+    // true = creado/editado sin red y aún no enviado al microservicio de predios
+    @ColumnInfo(defaultValue = "1") val pendienteSync: Boolean = true,
+    // v4: ubicación del predio para consultar el clima (API externa Open-Meteo). Opcional.
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
 
 @Entity(

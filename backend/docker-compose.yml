@@ -1,0 +1,62 @@
+# Levanta MySQL + los 3 microservicios:   docker compose up --build
+# Swagger:  http://localhost:8081/swagger-ui.html (predios)
+#           http://localhost:8082/swagger-ui.html (usuarios)
+#           http://localhost:8083/swagger-ui.html (mediciones)
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: nutriexpert-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot_pass --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  predios-service:
+    build: ./predios-service
+    container_name: nutriexpert-predios
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/nutri_predios?serverTimezone=America/Santiago
+      DB_USER: nutri_predios
+      DB_PASSWORD: predios_pass
+    ports:
+      - "8081:8081"
+
+  usuarios-service:
+    build: ./usuarios-service
+    container_name: nutriexpert-usuarios
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/nutri_usuarios?serverTimezone=America/Santiago
+      DB_USER: nutri_usuarios
+      DB_PASSWORD: usuarios_pass
+    ports:
+      - "8082:8082"
+
+  mediciones-service:
+    build: ./mediciones-service
+    container_name: nutriexpert-mediciones
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/nutri_mediciones?serverTimezone=America/Santiago
+      DB_USER: nutri_mediciones
+      DB_PASSWORD: mediciones_pass
+    ports:
+      - "8083:8083"
+
+volumes:
+  mysql_data:
